@@ -1,4 +1,6 @@
 const users = require("../data/users");
+const User = require("../models/User");
+const bcrypt = require("bcrypt");
 
 // GET ALL USERS
 const getUsers = (req, res) => {
@@ -21,46 +23,56 @@ const getUserById = (req, res) => {
 };
 
 // REGISTER USER
-const registerUser = (req, res) => {
-  const {
-    firstName,
-    lastName,
-    email,
-    password,
-    role,
-  } = req.body;
+const registerUser = async (req, res) => {
+  try {
+    const { firstName, lastName, email, password, role } = req.body;
 
-  if (!firstName || !lastName || !email || !password || !role) {
-    return res.status(400).json({
-      message: "Please provide all required fields",
+    // Make sure all required fields were provided
+    if (!firstName || !lastName || !email || !password || !role) {
+      return res.status(400).json({
+        message: "Please provide all required fields",
+      });
+    }
+
+    // Check MongoDB to see if this email is already registered
+    const existingUser = await User.findOne({ email });
+
+    if (existingUser) {
+      return res.status(400).json({
+        message: "User already exists",
+      });
+    }
+
+    // Hash the password before saving it
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Create the user in MongoDB
+    const newUser = await User.create({
+      firstName,
+      lastName,
+      email,
+      password: hashedPassword,
+      role,
+    });
+
+    // Return the user without sending the password back
+    res.status(201).json({
+      message: "User registered successfully",
+      user: {
+        id: newUser._id,
+        firstName: newUser.firstName,
+        lastName: newUser.lastName,
+        email: newUser.email,
+        role: newUser.role,
+      },
+    });
+  } catch (error) {
+    console.error(error);
+
+    res.status(500).json({
+      message: "Server error",
     });
   }
-
-  const existingUser = users.find(
-    (user) => user.email === email
-  );
-
-  if (existingUser) {
-    return res.status(400).json({
-      message: "User already exists",
-    });
-  }
-
-  const newUser = {
-    id: users.length + 1,
-    firstName,
-    lastName,
-    email,
-    password,
-    role,
-  };
-
-  users.push(newUser);
-
-  res.status(201).json({
-    message: "User registered successfully",
-    user: newUser,
-  });
 };
 
 // LOGIN USER
