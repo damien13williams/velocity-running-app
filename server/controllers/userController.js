@@ -1,10 +1,20 @@
 const users = require("../data/users");
 const User = require("../models/User");
 const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
 
 // GET ALL USERS
-const getUsers = (req, res) => {
-  res.status(200).json(users);
+const getUsers = async (req, res) => {
+  try {
+    const users = await User.find().select("-password");
+
+    res.status(200).json(users);
+  } catch (error) {
+    res.status(500).json({
+      message: "Error getting users",
+      error: error.message
+    });
+  }
 };
 
 // GET ONE USER
@@ -27,6 +37,11 @@ const registerUser = async (req, res) => {
   try {
     const { firstName, lastName, email, password, role } = req.body;
 
+    if (!["athlete", "coach"].includes(role)) {
+      return res.status(400).json({
+        message: "Please select a valid account type",
+      });
+    }
     // Make sure all required fields were provided
     if (!firstName || !lastName || !email || !password || !role) {
       return res.status(400).json({
@@ -76,25 +91,69 @@ const registerUser = async (req, res) => {
 };
 
 // LOGIN USER
-const loginUser = (req, res) => {
-  const { email, password } = req.body;
+const loginUser = async (req, res) => {
+  try {
+    const { email, password } = req.body;
 
-  const user = users.find(
-    (user) =>
-      user.email === email &&
-      user.password === password
-  );
+    // Make sure email and password were provided
+    if (!email || !password) {
+      return res.status(400).json({
+        message: "Please provide email and password",
+      });
+    }
 
-  if (!user) {
-    return res.status(401).json({
-      message: "Invalid email or password",
+    // Find the user in MongoDB
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      return res.status(401).json({
+        message: "Invalid email or password",
+      });
+    }
+
+    // Compare entered password with hashed MongoDB password
+    const passwordMatches = await bcrypt.compare(
+      password,
+      user.password
+    );
+
+    if (!passwordMatches) {
+      return res.status(401).json({
+        message: "Invalid email or password",
+      });
+    }
+
+    // Create authentication token
+    const token = jwt.sign(
+      {
+        userId: user._id,
+        role: user.role,
+      },
+      process.env.JWT_SECRET,
+      {
+        expiresIn: "1d",
+      }
+    );
+
+    // Send token and user information to frontend
+    res.status(200).json({
+      message: "Login successful",
+      token,
+      user: {
+        id: user._id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        role: user.role,
+      },
+    });
+  } catch (error) {
+    console.error("Login error:", error);
+
+    res.status(500).json({
+      message: "Server error",
     });
   }
-
-  res.status(200).json({
-    message: "Login successful",
-    user,
-  });
 };
 
 // UPDATE USER
