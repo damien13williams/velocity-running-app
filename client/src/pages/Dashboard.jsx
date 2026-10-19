@@ -127,12 +127,6 @@ function Dashboard() {
           </span>
         </div>
 
-        {/* SAMPLE DATA NOTICE */}
-        <div className="mb-6 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-          Training statistics and workouts below are sample data.
-          Account information comes from your login.
-        </div>
-
         {/* STAT CARDS */}
         <div className="mb-8 grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
           <StatCard

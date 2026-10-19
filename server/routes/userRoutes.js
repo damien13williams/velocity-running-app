@@ -8,8 +8,30 @@ const {
   updateUser,
   deleteUser,
 } = require("../controllers/userController");
+const protect = require("../middleware/authMiddleware");
+const authorizeRoles = require("../middleware/roleMiddleware");
 
 const router = express.Router();
+
+// Any authenticated user
+router.get("/me", protect, (req, res) => {
+  res.status(200).json({
+    message: "Authentication successful",
+    user: req.user,
+  });
+});
+
+// Coaches only
+router.get(
+  "/coach-test",
+  protect,
+  authorizeRoles("coach"),
+  (req, res) => {
+    res.status(200).json({
+      message: "Coach access granted",
+    });
+  }
+);
 
 router.get("/", getUsers);
 
