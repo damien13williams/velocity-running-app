@@ -1,5 +1,5 @@
 
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 const sampleWorkouts = [
   { day: "Monday", title: "Easy Run", details: "8 miles", status: "Completed" },
@@ -51,7 +51,7 @@ function Dashboard() {
   return (
     <div className="min-h-screen bg-slate-100 lg:flex">
       {/* SIDEBAR */}
-      <aside className="flex w-full flex-col bg-slate-950 p-6 text-white lg:min-h-screen lg:w-64">
+      <aside className="flex w-full flex-col bg-slate-950 p-6 text-white lg:fixed lg:inset-y-0 lg:left-0 lg:w-64 lg:overflow-y-auto">
         <div className="mb-12 flex items-center gap-3">
           <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-500 text-xl font-bold text-slate-950">
             V
@@ -73,9 +73,12 @@ function Dashboard() {
             My Training
           </div>
 
-          <div className="px-4 py-3 text-slate-400">
-            Team
-          </div>
+          <Link
+            to="/teams"
+            className="block rounded-lg px-4 py-3 text-slate-400 transition hover:bg-slate-800 hover:text-white"
+          >
+            Teams
+          </Link>
 
           <div className="px-4 py-3 text-slate-400">
             Race Calendar
@@ -104,7 +107,7 @@ function Dashboard() {
       </aside>
 
       {/* MAIN CONTENT */}
-      <main className="flex-1 p-6 lg:p-10">
+      <main className="min-w-0 flex-1 p-6 lg:ml-64 lg:p-10">
         <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
           <div>
             <p className="mb-2 text-sm font-semibold text-emerald-600">
