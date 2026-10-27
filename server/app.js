@@ -2,6 +2,7 @@ const express = require("express");
 const cors = require("cors");
 
 const userRoutes = require("./routes/userRoutes");
+const teamRoutes = require("./routes/teamRoutes");
 
 const app = express();
 
@@ -18,5 +19,9 @@ app.get("/", (req, res) => {
 
 // User routes
 app.use("/api/users", userRoutes);
+
+// Team routes
+app.use("/api/teams", teamRoutes);
+
 
 module.exports = app;
