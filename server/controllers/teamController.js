@@ -1,6 +1,7 @@
 const { join } = require("path");
 const Team = require("../models/Team");
 const crypto = require("crypto");
+const mongoose = require("mongoose");
 
 // Generate a random team join code
 const generateJoinCode = () => {
@@ -143,8 +144,70 @@ const joinTeam = async (req, res) => {
   }
 };
 
+const getTeamById = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // 1. Validate the MongoDB ObjectId
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        message: "Invalid team ID",
+      });
+    }
+
+    // 2. Find the team and retrieve coach/athlete information
+    const team = await Team.findById(id)
+      .populate("coach", "firstName lastName email role")
+      .populate("athletes", "firstName lastName email role");
+
+    if (!team) {
+      return res.status(404).json({
+        message: "Team not found",
+      });
+    }
+
+    // 3. Check whether the logged-in user is the coach
+    const isCoach =
+      team.coach?._id.toString() === req.user._id.toString();
+
+    // 4. Check whether the logged-in user is on the roster
+    const isAthlete = team.athletes.some(
+      (athlete) =>
+        athlete._id.toString() === req.user._id.toString()
+    );
+
+    // 5. Prevent users outside the team from accessing it
+    if (!isCoach && !isAthlete) {
+      return res.status(403).json({
+        message: "You do not have permission to view this team",
+      });
+    }
+
+    // 6. Return team information
+    // Only the coach receives the private join code.
+    const teamData = team.toObject();
+
+    if (!isCoach) {
+      delete teamData.joinCode;
+    }
+
+    return res.status(200).json({
+      team: teamData,
+      athleteCount: team.athletes.length,
+    });
+
+  } catch (error) {
+    console.error("Get team by ID error:", error);
+
+    return res.status(500).json({
+      message: "Server error while retrieving team",
+    });
+  }
+};
+
 module.exports = {
   createTeam,
   getMyTeams,
   joinTeam,
+  getTeamById
 };

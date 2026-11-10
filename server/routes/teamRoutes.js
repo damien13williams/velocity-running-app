@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 
-const { createTeam, getMyTeams, joinTeam,} = require("../controllers/teamController");
+const { createTeam, getMyTeams, joinTeam, getTeamById} = require("../controllers/teamController");
 
 const protect = require("../middleware/authMiddleware");
 const authorizeRoles = require("../middleware/roleMiddleware");
@@ -21,6 +21,13 @@ router.post(
     protect,
     authorizeRoles("athlete"),
     joinTeam
+);
+
+router.get(
+  "/:id",
+  protect,
+  authorizeRoles("coach", "athlete"),
+  getTeamById
 );
 
 module.exports = router;
